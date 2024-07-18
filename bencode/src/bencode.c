@@ -1,9 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-
 #include "bencode.h"
-
-bencode_value* bencode_decode(char* filename) {}
 
 bencode_value bencode_decode_int(char** data) {
     bencode_value retval;
