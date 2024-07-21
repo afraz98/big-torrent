@@ -115,7 +115,7 @@ void free_bencode_value(bencode_value* obj) {
     free(obj);
 }
 
-bencode_value* bencode_decode_file(char* filename){
+bencode_value* bencode_decode_file(const char* filename){
     FILE* fp; 
     char c;
 

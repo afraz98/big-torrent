@@ -11,7 +11,7 @@ extern "C" {
 #include <ctype.h>
 
 typedef enum {
-    B_ENCODED_INTEGER,
+    B_ENCODED_INTEGER = 0,
     B_ENCODED_STRING,
     B_ENCODED_LIST,
     B_ENCODED_DICTIONARY
@@ -44,7 +44,7 @@ typedef struct bencode_value_struct {
  * \brief Decode b-encoded file
  * @param filename Filename to decode
  */
-bencode_value* bencode_decode_file(char* filename);
+bencode_value* bencode_decode_file(const char* filename);
 
 /*!
  * \fn bencode_decode_int
