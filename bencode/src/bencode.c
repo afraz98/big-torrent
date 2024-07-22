@@ -137,3 +137,39 @@ bencode_value* bencode_decode_file(const char* filename){
 
     return data;
 }
+
+void bencode_encode(bencode_value *value, char *output, size_t *offset) {
+    switch(value->type) {
+        case B_ENCODED_INTEGER: {
+            sprintf(output + *offset, "i%llde", value->integer);
+            *offset += strlen(output + *offset);
+            break;
+        } case B_ENCODED_STRING: {
+            sprintf(output + *offset, "%d:", value->string.strlen);
+            *offset += strlen(output + *offset);
+            memcpy(output + *offset, value->string.string, value->string.strlen);
+            *offset += value->string.strlen;
+            break;
+        } case B_ENCODED_LIST: {
+            strcat(output + *offset, "l");
+            *offset += 1;
+            for (int i = 0; i < value->list.llen; i++) {
+                bencode_encode(value->list.list_val[i], output, offset);
+            }
+            strcat(output + *offset, "e");
+            *offset += 1;
+            break;   
+        } case B_ENCODED_DICTIONARY: {
+            strcat(output + *offset, "d");
+            *offset += 1;
+            for (int i = 0; i < value->dict.dlen; i++) {
+                bencode_encode(value->dict.keys[i], output, offset);
+                bencode_encode(value->dict.values[i], output, offset);
+            }
+            strcat(output + *offset, "e");
+            *offset += 1;
+            break;
+        }
+    }
+    // Handle other bencode types (list, integer) as needed
+}

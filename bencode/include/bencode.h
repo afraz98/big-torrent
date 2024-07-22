@@ -72,6 +72,8 @@ bencode_value* parse_object(FILE* fp);
 
 void free_bencode_value(bencode_value* obj);
 
+void bencode_encode(bencode_value *value, char *output, size_t *offset);
+
 #ifdef __cplusplus
 }
 #endif
