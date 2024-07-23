@@ -38,7 +38,7 @@ std::string url_encode(const char* s, size_t len) {
     return encoded.str();
 }
 
-void sendAnnounceRequest(const std::string announce_url, const unsigned char* info_hash, const std::string& peer_id){
+void sendAnnounceRequest(const std::string announce_url, const unsigned char* info_hash, const std::string& peer_id, long long length){
     CURL* curl;
     CURLcode res;
     std::string response_data;
@@ -49,16 +49,15 @@ void sendAnnounceRequest(const std::string announce_url, const unsigned char* in
         throw std::runtime_error("Unable to initialize CURL session");
 
     std::ostringstream url;
-    url <<  announce_url 
-        << "?info_hash=" << "2aa4f5a7e209e54b32803d43670971c4c8caaa05" // url_encode(info_hash, SHA_DIGEST_LENGTH)
-        << "&peer_id=" << url_encode(reinterpret_cast<const unsigned char*>(url_encode(peer_id.c_str(), 21).c_str()), 21)
+    url <<  announce_url
+        << "?info_hash=" << url_encode(info_hash, 20)
+        << "&peer_id=" << url_encode(peer_id.c_str(), peer_id.length())
         << "&port=" << "8661"
-        << "&uploaded=" << "0"
-        << "&downloaded=" << "0"
-        << "&left=" << "262144"
-        << "&compact=" << "1"
-        << "&event=" << "started";
-
+        << "&uploaded=0"
+        << "&downloaded=0"
+        << "&left=" << length
+        << "&event=" << "started"
+        << "&compact=" << "1";
     std::cout << url.str() << std::endl;
     curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
@@ -95,6 +94,6 @@ int main(int argc, char* argv[]) {
 
     // Send HTTPS request to obtain torrent information
     sendAnnounceRequest(torrent_info.getAnnounce(), 
-            torrent_info.getInfoHash(), Torrent::generatePeerID("MY", "1000"));
+            torrent_info.getInfoHash(), Torrent::generatePeerID("BT", "1000"), torrent_info.getFileLength());
     return EXIT_SUCCESS;
 }

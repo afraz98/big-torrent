@@ -19,6 +19,7 @@ namespace Torrent {
             inline std::string getAnnounce() { return announce; }
             inline long long getPiecesLength() { return pieces_length; }
             inline unsigned char* getInfoHash() { return info_hash; }
+            inline long long getFileLength() { return length; }
         private:
             bencode_value* data, *info_dict;
             std::string filename, announce, author, comment, name;

@@ -113,6 +113,6 @@ namespace Torrent {
         memset(buffer, 0, sizeof(buffer));
         
         bencode_encode(info_dict, buffer, &offset);
-        SHA1((unsigned char *) buffer, 0, output_hash);
+        SHA1(reinterpret_cast<unsigned char*>(buffer), sizeof(buffer), output_hash);
     }
 } // namespace Torrent
