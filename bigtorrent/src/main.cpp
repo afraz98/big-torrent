@@ -91,6 +91,7 @@ int main(int argc, char* argv[]) {
     // Parse torrent file
     std::cout << "Parsing torrent file: " << argv[1] << std::endl; 
     Torrent::TorrentInfo torrent_info = Torrent::TorrentInfo(argv[1], true);
+    torrent_info.printTorrentData();
 
     // Send HTTPS request to obtain torrent information
     sendAnnounceRequest (

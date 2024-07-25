@@ -24,6 +24,7 @@ namespace Torrent {
             bencode_value* data, *info_dict;
             std::string filename, announce, author, comment, name;
             std::vector<std::string>  announce_list;
+            std::vector<std::string> files;
             long long creation_date, length, pieces_length;
             std::vector<unsigned char> pieces;
             unsigned char info_hash[SHA_DIGEST_LENGTH];

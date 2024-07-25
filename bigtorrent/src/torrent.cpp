@@ -73,7 +73,6 @@ namespace Torrent {
             }
         }
 
-        std::cout << "Computing SHA1" << std::endl;
         // Compute SHA1 hash of info dict
         computeSHA1(info_dict, info_hash);
     }
@@ -94,10 +93,6 @@ namespace Torrent {
         std::cout << "length :: " << length << std::endl;
         std::cout << "pieces length :: " << pieces_length << std::endl;
 
-        for(int i = 0; i < pieces_length; i++) {
-            std::cout << std::hex << (int) pieces.at(i) << "\t";
-            if(i % 8 == 0) std::cout << std::endl;
-        }
     }
 
     std::string generatePeerID(const char *client_id, const char *client_version) {
@@ -117,13 +112,6 @@ namespace Torrent {
     }
 
     void computeSHA1(bencode_value *info_dict, unsigned char *output_hash) {
-        std::cout << "Calculating SHA1" << std::endl;
-
-        char buffer[10000];  // Adjust size as needed
-        size_t offset = 0;
-        memset(buffer, 0, sizeof(buffer));
-        
-        bencode_encode(info_dict, buffer, &offset);
-        SHA1(reinterpret_cast<unsigned char*>(buffer), offset, output_hash);
+        SHA1(reinterpret_cast<unsigned char*>(info_dict), sizeof(info_dict), output_hash);
     }
 } // namespace Torrent
