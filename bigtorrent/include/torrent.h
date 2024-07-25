@@ -14,7 +14,7 @@ namespace Torrent {
 
     class TorrentInfo {
         public:
-            TorrentInfo(std::string filename);
+            TorrentInfo(std::string filename, bool verbose);
             void printTorrentData();
             inline std::string getAnnounce() { return announce; }
             inline long long getPiecesLength() { return pieces_length; }
@@ -27,6 +27,7 @@ namespace Torrent {
             long long creation_date, length, pieces_length;
             std::vector<unsigned char> pieces;
             unsigned char info_hash[SHA_DIGEST_LENGTH];
+            bool verbose;
     };
 
     std::string generatePeerID(const char* client_id, const char* client_version);

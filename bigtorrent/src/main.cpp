@@ -33,7 +33,7 @@ std::string url_encode(const char* s, size_t len) {
             encoded << s[i];
         } else {
             encoded << '%' << std::setw(2) << std::setfill('0') << std::hex << std::uppercase << static_cast<int>(static_cast<unsigned char>(s[i]));
-            }
+        }
     }
     return encoded.str();
 }
@@ -50,7 +50,7 @@ void sendAnnounceRequest(const std::string announce_url, const unsigned char* in
 
     std::ostringstream url;
     url <<  announce_url
-        << "?info_hash=" << url_encode(info_hash, 20)
+        << "?info_hash=" << url_encode(info_hash, SHA_DIGEST_LENGTH)
         << "&peer_id=" << url_encode(peer_id.c_str(), peer_id.length())
         << "&port=" << "8661"
         << "&uploaded=0"
@@ -90,10 +90,14 @@ int main(int argc, char* argv[]) {
     
     // Parse torrent file
     std::cout << "Parsing torrent file: " << argv[1] << std::endl; 
-    Torrent::TorrentInfo torrent_info = Torrent::TorrentInfo(argv[1]);
+    Torrent::TorrentInfo torrent_info = Torrent::TorrentInfo(argv[1], true);
 
     // Send HTTPS request to obtain torrent information
-    sendAnnounceRequest(torrent_info.getAnnounce(), 
-            torrent_info.getInfoHash(), Torrent::generatePeerID("BT", "1000"), torrent_info.getFileLength());
+    sendAnnounceRequest (
+        torrent_info.getAnnounce(), 
+        torrent_info.getInfoHash(), 
+        Torrent::generatePeerID("BT", "1000"), 
+        torrent_info.getFileLength()
+    );
     return EXIT_SUCCESS;
 }

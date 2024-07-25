@@ -4,6 +4,16 @@ import urllib.parse
 import binascii
 
 
+def hex_string_to_bytes(hex_str):
+    # Remove the '0x' prefix
+    hex_str = hex_str[2:] if hex_str.startswith('0x') else hex_str
+    # Convert hex string to bytes
+    return bytes.fromhex(hex_str)
+
+def byte_url_encode_from_hex(hex_str):
+    byte_seq = hex_string_to_bytes(hex_str)
+    return ''.join('%{:02X}'.format(b) for b in byte_seq)
+
 def generateAnnounceURL(torrent_file_path):
     # Read and decode the torrent file
     with open(torrent_file_path, 'rb') as file:
@@ -15,9 +25,9 @@ def generateAnnounceURL(torrent_file_path):
     # Calculate the SHA1 hash of the 'info' section
     info_hash = hashlib.sha1(bencodepy.encode(info_section)).digest()
 
-    # Convert the info_hash to a hex string and URL-encode it
-    encoded_info_hash = urllib.parse.quote(binascii.hexlify(info_hash).decode('utf-8'))
-
+    # Properly URL-encode the info_hash (single encoding)
+    encoded_info_hash = urllib.parse.quote(info_hash, safe='')
+    
     # Extract the announce URL
     announce_url = torrent_data[b'announce'].decode('utf-8')
 
@@ -45,4 +55,4 @@ def generateAnnounceURL(torrent_file_path):
     # Print the results
     print(f"Announce Request URL: {announce_request_url}")
 
-
+generateAnnounceURL("/home/toeknee/Downloads/big-buck-bunny.torrent")

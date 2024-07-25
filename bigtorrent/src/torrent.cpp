@@ -6,19 +6,20 @@
 
 namespace Torrent {
 
-    TorrentInfo::TorrentInfo(std::string filename) : 
+    TorrentInfo::TorrentInfo(std::string filename, bool verbose) : 
     filename(filename), 
+    verbose(verbose),
     name(""),
     creation_date(0),
     length(0), 
     pieces_length(0) {
         bencode_value* torrent_data = bencode_decode_file(filename.c_str());
 
-    if (!torrent_data)
+        if (!torrent_data)
             throw std::runtime_error("Error parsing torrent file");
 
         for(int i = 0; i < torrent_data->dict.dlen; i++) {
-            bencode_value* key = torrent_data->dict.keys[i];
+            bencode_value* key = torrent_data->dict.keys[i];            
             if(key->type == B_ENCODED_STRING) {
                 if(strcmp(key->string.string, "announce") == 0)
                     announce = std::string(torrent_data->dict.values[i]->string.string);
@@ -41,30 +42,38 @@ namespace Torrent {
 
                 if(strcmp(key->string.string, "info") == 0) {
                     info_dict = torrent_data->dict.values[i];
-
                     for(int k = 0; k < torrent_data->dict.values[i]->dict.dlen; k++){
                         // Parse dictionary fields for 'info' dictionary
                         bencode_value* key = torrent_data->dict.values[i]->dict.keys[k];
                         if(key->type == B_ENCODED_STRING) {
+                            if(strcmp(key->string.string, "files") == 0) {
+                                // Get file length of all files
+                                for(int m = 0; m < torrent_data->dict.values[i]->dict.values[k]->list.llen; m++){
+                                    bencode_value* file = torrent_data->dict.values[i]->dict.values[k]->list.list_val[m];
+                                    for(int n = 0; n < file->dict.dlen; n++){
+                                        bencode_value* key = file->dict.keys[n];
+                                        if(key->type == B_ENCODED_STRING) {
+                                            if(strcmp(key->string.string, "length")) {
+                                                length += file->dict.values[n]->integer;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             if(strcmp(key->string.string, "name") == 0)
                                 name = std::string(torrent_data->dict.values[i]->dict.values[k]->string.string);
                             if (strcmp(key->string.string, "length") == 0)
                                 length = torrent_data->dict.values[i]->dict.values[k]->integer;
                             if(strcmp(key->string.string, "piece length") == 0)
                                 pieces_length = torrent_data->dict.values[i]->dict.values[k]->integer;
-                            if(strcmp(key->string.string, "pieces") == 0) {
-                                unsigned char* piece = (unsigned char *)  torrent_data->dict.values[i]->dict.values[k]->string.string;
-                                for(int l = 0; l < pieces_length; l++) {
-                                    pieces.push_back(*piece);
-                                    piece++;
-                                }
-                            }
                         }
                     }
                 }
             }
         }
 
+        std::cout << "Computing SHA1" << std::endl;
         // Compute SHA1 hash of info dict
         computeSHA1(info_dict, info_hash);
     }
@@ -108,11 +117,13 @@ namespace Torrent {
     }
 
     void computeSHA1(bencode_value *info_dict, unsigned char *output_hash) {
+        std::cout << "Calculating SHA1" << std::endl;
+
         char buffer[10000];  // Adjust size as needed
         size_t offset = 0;
         memset(buffer, 0, sizeof(buffer));
         
         bencode_encode(info_dict, buffer, &offset);
-        SHA1(reinterpret_cast<unsigned char*>(buffer), sizeof(buffer), output_hash);
+        SHA1(reinterpret_cast<unsigned char*>(buffer), offset, output_hash);
     }
 } // namespace Torrent
