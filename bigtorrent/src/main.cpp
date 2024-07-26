@@ -77,9 +77,13 @@ void sendAnnounceRequest(const std::string announce_url, const unsigned char* in
     std::cout << "Response code :: " << response_code << std::endl;
 
     // Display received data (tracker response)
-    std::cout << "Tracker response: " << response_data << std::endl;
-
+    std::cout << "Tracker response :: " << response_data << std::endl;
     curl_easy_cleanup(curl);
+
+    // Parse tracker response
+    std::cout << "Parsing tracker response" << std::endl;
+    bencode_value* parsed_response = bencode_decode_str(response_data.c_str());
+    print_bencode_value(parsed_response, 0);
 }
 
 int main(int argc, char* argv[]) {

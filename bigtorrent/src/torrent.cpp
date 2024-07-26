@@ -112,6 +112,6 @@ namespace Torrent {
     }
 
     void computeSHA1(bencode_value *info_dict, unsigned char *output_hash) {
-        SHA1(reinterpret_cast<unsigned char*>(info_dict), sizeof(info_dict), output_hash);
+        SHA1(reinterpret_cast<unsigned char*>(info_dict), 0, output_hash);
     }
 } // namespace Torrent

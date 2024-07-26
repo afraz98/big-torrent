@@ -32,9 +32,17 @@ namespace Torrent {
     };
 
     std::string generatePeerID(const char* client_id, const char* client_version);
-
     void computeSHA1(bencode_value *info_dict, unsigned char *output_hash);
 
-}
+    class Tracker {
+        public:
+            Tracker(std::string announceRequest);
+            void printTrackerData();
+            
+        private:
+            bencode_value* trackerResponse;
+    };
+
+} // namespace Torrent
 
 #endif // TORRENT_H

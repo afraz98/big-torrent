@@ -1,0 +1,3 @@
+[submodule "libbencode"]
+	path = libbencode
+	url = git@github.com:afraz98/libbencode.git
