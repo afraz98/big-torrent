@@ -1,10 +1,12 @@
 set(SRC 
     src/main.cpp 
-    src/torrent.cpp
+    src/tracker.cpp
+    src/tracker_response.cpp
 )
 
 set(HDR 
-    include/torrent.h
+    include/tracker.h
+    include/tracker_response.h
 )
 
 find_package(OpenSSL REQUIRED)

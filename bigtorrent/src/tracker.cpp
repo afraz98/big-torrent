@@ -2,11 +2,11 @@
 #include <iostream>
 #include <openssl/sha.h>
 
-#include "torrent.h"
+#include "tracker.h"
+#include "tracker_response.h"
 
-namespace Torrent {
-
-    TorrentInfo::TorrentInfo(std::string filename, bool verbose) : 
+namespace Tracker {
+    Tracker::Tracker(std::string filename, bool verbose) : 
     filename(filename), 
     verbose(verbose),
     name(""),
@@ -25,10 +25,9 @@ namespace Torrent {
                     announce = std::string(torrent_data->dict.values[i]->string.string);
                 
                 if(strcmp(key->string.string, "announce-list") == 0) {
-                    for(int j = 0; j < torrent_data->dict.values[i]->list.llen; j++) {
-                        announce_list.push_back (
-                            std::string(torrent_data->dict.values[i]->list.list_val[j]->list.list_val[0]->string.string));
-                    }
+                    for(int j = 0; j < torrent_data->dict.values[i]->list.llen; j++)
+                        announce_list.push_back (std::string(torrent_data->
+                                dict.values[i]->list.list_val[j]->list.list_val[0]->string.string));
                 }
 
                 if(strcmp(key->string.string, "comment") == 0)
@@ -77,14 +76,13 @@ namespace Torrent {
         computeSHA1(info_dict, info_hash);
     }
 
-    void TorrentInfo::printTorrentData() {
-        std::cout << "======= Torrent data ========" << std::endl;
+    void Tracker::printTrackerData() {
         std::cout << "announce :: " << announce << std::endl;
         
-        std::cout << "announce-list :: {" << std::endl;
+        std::cout << "announce-list :: [\n";
         for(auto ann : announce_list)
-            std::cout << "\t" << ann << "," << std::endl;
-        std::cout << "}" << std::endl;
+            std::cout << "\t" << ann << std::endl;
+        std::cout << "]" << std::endl;
         
         std::cout << "author :: " << author << std::endl;
         std::cout << "comment :: " << comment << std::endl;
@@ -92,7 +90,6 @@ namespace Torrent {
         std::cout << "name :: " << name << std::endl;
         std::cout << "length :: " << length << std::endl;
         std::cout << "pieces length :: " << pieces_length << std::endl;
-
     }
 
     std::string generatePeerID(const char *client_id, const char *client_version) {
@@ -114,4 +111,4 @@ namespace Torrent {
     void computeSHA1(bencode_value *info_dict, unsigned char *output_hash) {
         SHA1(reinterpret_cast<unsigned char*>(info_dict), 0, output_hash);
     }
-} // namespace Torrent
+} // namespace Tracker

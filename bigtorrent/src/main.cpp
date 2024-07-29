@@ -4,9 +4,10 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
-#include <bencode.h>
 
-#include "torrent.h"
+#include <bencode.h>
+#include "tracker.h"
+#include "tracker_response.h"
 
 size_t write_callback(void *contents, size_t size, size_t nmemb, std::string *s) {
     size_t total_size = size * nmemb;
@@ -38,7 +39,7 @@ std::string url_encode(const char* s, size_t len) {
     return encoded.str();
 }
 
-void sendAnnounceRequest(const std::string announce_url, const unsigned char* info_hash, const std::string& peer_id, long long length){
+Tracker::TrackerResponse sendAnnounceRequest(bool first, const std::string announce_url, const unsigned char* info_hash, const std::string& peer_id, long long length){
     CURL* curl;
     CURLcode res;
     std::string response_data;
@@ -55,10 +56,11 @@ void sendAnnounceRequest(const std::string announce_url, const unsigned char* in
         << "&port=" << "8661"
         << "&uploaded=0"
         << "&downloaded=0"
-        << "&left=" << length
-        << "&event=" << "started"
-        << "&compact=" << "1";
-    std::cout << url.str() << std::endl;
+        << "&left=" << length;
+    if(first) url << "&event=" << "started";
+    url << "&compact=" << "1";
+
+    // Provide CURL with URL
     curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
     // Set callback function to write data to file
@@ -77,13 +79,10 @@ void sendAnnounceRequest(const std::string announce_url, const unsigned char* in
     std::cout << "Response code :: " << response_code << std::endl;
 
     // Display received data (tracker response)
-    std::cout << "Tracker response :: " << response_data << std::endl;
     curl_easy_cleanup(curl);
 
     // Parse tracker response
-    std::cout << "Parsing tracker response" << std::endl;
-    bencode_value* parsed_response = bencode_decode_str(response_data.c_str());
-    print_bencode_value(parsed_response, 0);
+    return Tracker::TrackerResponse(response_data);
 }
 
 int main(int argc, char* argv[]) {
@@ -94,15 +93,12 @@ int main(int argc, char* argv[]) {
     
     // Parse torrent file
     std::cout << "Parsing torrent file: " << argv[1] << std::endl; 
-    Torrent::TorrentInfo torrent_info = Torrent::TorrentInfo(argv[1], true);
-    torrent_info.printTorrentData();
+    Tracker::Tracker torrent_info = Tracker::Tracker(argv[1], true);
 
     // Send HTTPS request to obtain torrent information
-    sendAnnounceRequest (
-        torrent_info.getAnnounce(), 
-        torrent_info.getInfoHash(), 
-        Torrent::generatePeerID("BT", "1000"), 
-        torrent_info.getFileLength()
-    );
+    Tracker::TrackerResponse response = sendAnnounceRequest(true, torrent_info.getAnnounce(), torrent_info.getInfoHash(),  Tracker::generatePeerID("BT", "1000"), torrent_info.getFileLength());
+    
+    for(auto peer : response.getPeers())
+        std::cout << peer.IP << " " << peer.port << std::endl;
     return EXIT_SUCCESS;
 }

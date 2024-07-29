@@ -1,5 +1,5 @@
-#ifndef TORRENT_H
-#define TORRENT_H
+#ifndef TRACKER_H
+#define TRACKER_H
 
 #include <openssl/sha.h>
 #include <stdio.h>
@@ -10,12 +10,13 @@
 #include <vector>
 #include <bencode.h>
 
-namespace Torrent {
-
-    class TorrentInfo {
+namespace Tracker {
+    class Tracker {
         public:
-            TorrentInfo(std::string filename, bool verbose);
-            void printTorrentData();
+            Tracker(std::string filename, bool verbose);
+            ~Tracker() = default;
+
+            void printTrackerData();
             inline std::string getAnnounce() { return announce; }
             inline long long getPiecesLength() { return pieces_length; }
             inline unsigned char* getInfoHash() { return info_hash; }
@@ -29,20 +30,10 @@ namespace Torrent {
             std::vector<unsigned char> pieces;
             unsigned char info_hash[SHA_DIGEST_LENGTH];
             bool verbose;
-    };
+    }; // class Tracker
 
     std::string generatePeerID(const char* client_id, const char* client_version);
     void computeSHA1(bencode_value *info_dict, unsigned char *output_hash);
+} // namespace Tracker
 
-    class Tracker {
-        public:
-            Tracker(std::string announceRequest);
-            void printTrackerData();
-            
-        private:
-            bencode_value* trackerResponse;
-    };
-
-} // namespace Torrent
-
-#endif // TORRENT_H
+#endif // TRACKER_H
