@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace Tracker {
+namespace Torrent {
     struct Peer { 
         std::string IP;
         uint16_t port;
@@ -24,6 +24,6 @@ namespace Tracker {
             std::vector<Peer> peer_list;
             int interval, min_interval, seeders, leechers, peers, completed, downloaded;
     }; // class TrackerResponse
-} // namespace Tracker
+} // namespace Torrent
 
 #endif // TRACKER_RESPONSE_H

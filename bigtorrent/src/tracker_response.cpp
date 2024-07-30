@@ -7,7 +7,7 @@
 #include <arpa/inet.h>  // For inet_ntop
 #include "tracker_response.h"
 
-namespace Tracker {
+namespace Torrent {
     TrackerResponse::TrackerResponse(std::string response) : 
     interval(0), min_interval(0), seeders(0), leechers(0), peers(0) {
         raw_tracker_response = bencode_decode_str(response.c_str());

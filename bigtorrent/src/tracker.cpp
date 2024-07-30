@@ -5,7 +5,7 @@
 #include "tracker.h"
 #include "tracker_response.h"
 
-namespace Tracker {
+namespace Torrent {
     Tracker::Tracker(std::string filename, bool verbose) : 
     filename(filename), 
     verbose(verbose),
@@ -74,6 +74,9 @@ namespace Tracker {
 
         // Compute SHA1 hash of info dict
         computeSHA1(info_dict, info_hash);
+
+        // Generate peer ID
+        peer_id = generatePeerID("MY", "1000");
     }
 
     void Tracker::printTrackerData() {
@@ -108,7 +111,11 @@ namespace Tracker {
         return std::string(peer_id);
     }
 
-    void computeSHA1(bencode_value *info_dict, unsigned char *output_hash) {
-        SHA1(reinterpret_cast<unsigned char*>(info_dict), 0, output_hash);
+    void computeSHA1(bencode_value *info_dict, std::vector<unsigned char> output_hash) {
+        // Ensure the output vector has the correct size (SHA_DIGEST_LENGTH = 20 bytes)
+        output_hash.resize(SHA_DIGEST_LENGTH);
+
+        // Calculate the SHA1 hash
+        SHA1(reinterpret_cast<unsigned char*>(info_dict), 0, output_hash.data());
     }
 } // namespace Tracker

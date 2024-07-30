@@ -1,11 +1,14 @@
+#include <arpa/inet.h>
+#include <bencode.h>
 #include <curl/curl.h>
 #include <stdio.h>
 #include <string>
 #include <sstream>
+#include <sys/socket.h>
 #include <iomanip>
 #include <iostream>
+#include <unistd.h>
 
-#include <bencode.h>
 #include "tracker.h"
 #include "tracker_response.h"
 
@@ -39,7 +42,19 @@ std::string url_encode(const char* s, size_t len) {
     return encoded.str();
 }
 
-Tracker::TrackerResponse sendAnnounceRequest(bool first, const std::string announce_url, const unsigned char* info_hash, const std::string& peer_id, long long length){
+std::string url_encode(std::vector<unsigned char>s, size_t len) {
+    std::ostringstream encoded;
+    for (size_t i = 0; i < len; ++i) {
+        if (isalnum(static_cast<unsigned char>(s[i])) || s[i] == '-' || s[i] == '_' || s[i] == '.' || s[i] == '~') {
+            encoded << s[i];
+        } else {
+            encoded << '%' << std::setw(2) << std::setfill('0') << std::hex << std::uppercase << static_cast<int>(static_cast<unsigned char>(s[i]));
+        }
+    }
+    return encoded.str();
+}
+
+Torrent::TrackerResponse sendAnnounceRequest(bool first, const std::string announce_url, const std::vector<unsigned char> info_hash, const std::string& peer_id, long long length){
     CURL* curl;
     CURLcode res;
     std::string response_data;
@@ -82,7 +97,67 @@ Tracker::TrackerResponse sendAnnounceRequest(bool first, const std::string annou
     curl_easy_cleanup(curl);
 
     // Parse tracker response
-    return Tracker::TrackerResponse(response_data);
+    return Torrent::TrackerResponse(response_data);
+}
+
+bool performHandshake(std::string& ip, uint16_t port, const std::vector<unsigned char> &info_hash, const std::string &peer_id) {
+    // Socket setup
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        std::cerr << "Failed to create socket" << std::endl;
+        return false;
+    }
+
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    inet_pton(AF_INET, ip.c_str(), &server_addr.sin_addr);
+
+    if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        std::cerr << "Failed to connect to peer " << ip << std::endl;
+        close(sock);
+        return false;
+    }
+
+    // Build handshake message
+    std::string pstr = "BitTorrent protocol";
+    unsigned char pstrlen = static_cast<unsigned char>(pstr.size());
+    unsigned char reserved[8] = {0};
+
+    std::vector<unsigned char> handshake_msg;
+    handshake_msg.push_back(pstrlen);
+    handshake_msg.insert(handshake_msg.end(), pstr.begin(), pstr.end());
+    handshake_msg.insert(handshake_msg.end(), reserved, reserved + 8);
+    handshake_msg.insert(handshake_msg.end(), info_hash.begin(), info_hash.end());
+    handshake_msg.insert(handshake_msg.end(), peer_id.begin(), peer_id.end());
+
+    // Send handshake
+    if (send(sock, handshake_msg.data(), handshake_msg.size(), 0) != handshake_msg.size()) {
+        std::cerr << "Failed to send handshake" << std::endl;
+        close(sock);
+        return false;
+    }
+
+    // Receive handshake
+    std::vector<unsigned char> response(68);
+    ssize_t bytes_received = recv(sock, response.data(), response.size(), 0);
+    if (bytes_received != 68) {
+        std::cerr << "Invalid handshake response" << std::endl;
+        close(sock);
+        return false;
+    }
+
+    // Validate the response (info_hash match)
+    if (!std::equal(info_hash.begin(), info_hash.end(), response.begin() + 28)) {
+        std::cerr << "Info hash mismatch" << std::endl;
+        close(sock);
+        return false;
+    }
+
+    // Handshake successful
+    std::cout << "Handshake successful with " << ip << std::endl;
+    close(sock);
+    return true;        
 }
 
 int main(int argc, char* argv[]) {
@@ -93,12 +168,18 @@ int main(int argc, char* argv[]) {
     
     // Parse torrent file
     std::cout << "Parsing torrent file: " << argv[1] << std::endl; 
-    Tracker::Tracker torrent_info = Tracker::Tracker(argv[1], true);
+    Torrent::Tracker torrent_info = Torrent::Tracker(argv[1], true);
 
     // Send HTTPS request to obtain torrent information
-    Tracker::TrackerResponse response = sendAnnounceRequest(true, torrent_info.getAnnounce(), torrent_info.getInfoHash(),  Tracker::generatePeerID("BT", "1000"), torrent_info.getFileLength());
+    Torrent::TrackerResponse response = sendAnnounceRequest (
+        true, 
+        torrent_info.getAnnounce(), 
+        torrent_info.getInfoHash(),  
+        torrent_info.getPeerID(), 
+        torrent_info.getFileLength()
+    );
     
     for(auto peer : response.getPeers())
-        std::cout << peer.IP << " " << peer.port << std::endl;
+        performHandshake(peer.IP, peer.port, torrent_info.getInfoHash(), torrent_info.getPeerID());
     return EXIT_SUCCESS;
 }
